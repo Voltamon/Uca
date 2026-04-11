@@ -14,6 +14,29 @@ func generateDevMain(appName string) error {
 	})
 }
 
+func generateUcaPackage(appName string) error {
+	files := []struct {
+		src  string
+		dest string
+	}{
+		{"uca/migrations.go", ".uca/uca/migrations.go"},
+		{"uca/types.go", ".uca/uca/types.go"},
+	}
+
+	for _, f := range files {
+		err := scaffold.CopyTemplate(f.src, f.dest, scaffold.TemplateVars{
+			AppName: appName,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to generate %s: %w", f.dest, err)
+		}
+	}
+
+	fmt.Println("Generated: .uca/uca/migrations.go")
+	fmt.Println("Generated: .uca/uca/types.go")
+	return nil
+}
+
 func ensureGoMod(appName string) error {
 	err := os.MkdirAll(".uca", 0755)
 	if err != nil {

@@ -48,7 +48,8 @@ func buildProject() error {
 }
 
 func runProject() error {
-	cmd := exec.Command(".uca/server")
+	cmd := exec.Command("./server")
+	cmd.Dir = ".uca"
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()

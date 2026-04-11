@@ -53,6 +53,11 @@ func Run() error {
 
 	fmt.Println("Generated: .uca/uca/registry.go")
 
+	err = generateUcaPackage(cfg.App.Name)
+	if err != nil {
+		return fmt.Errorf("failed to generate uca package: %w", err)
+	}
+
 	err = generateDevMain(cfg.App.Name)
 	if err != nil {
 		return fmt.Errorf("failed to generate dev main: %w", err)
