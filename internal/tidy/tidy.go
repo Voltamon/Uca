@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"github.com/Voltamon/Uca/internal/config"
 	"github.com/Voltamon/Uca/internal/scaffold"
+	"github.com/Voltamon/Uca/internal/schema"
 )
 
 func Run() error {
@@ -34,7 +35,54 @@ func Run() error {
 	}
 
 	fmt.Println("reconciliation complete")
+
+	err = ensureGoMod(cfg.App.Name)
+	if err != nil {
+		return fmt.Errorf("failed to ensure go.mod: %w", err)
+	}
+
+	err = reconcileSchema(&cfg)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile schema: %w", err)
+	}
+
+	err = generateRegistry(&cfg)
+	if err != nil {
+		return fmt.Errorf("failed to generate registry: %w", err)
+	}
+
+	fmt.Println("Generated: .uca/uca/registry.go")
+
+	err = generateDevMain(cfg.App.Name)
+	if err != nil {
+		return fmt.Errorf("failed to generate dev main: %w", err)
+	}
+
+	fmt.Println("Generated: .uca/main.go")
+
 	return nil
+}
+
+func reconcileSchema(cfg *config.Config) error {
+	desired := schema.ParseFromConfig(cfg)
+
+	current, err := schema.LoadSnapshot()
+	if err != nil {
+		return fmt.Errorf("failed to load schema snapshot: %w", err)
+	}
+
+	changes := schema.Diff(current, desired)
+
+	accepted, err := schema.ApplyChanges(changes)
+	if err != nil {
+		return fmt.Errorf("failed to apply schema changes: %w", err)
+	}
+
+	if !accepted {
+		return nil
+	}
+
+	return schema.SaveSnapshot(desired)
 }
 
 func reconcileFiles(cfg *config.Config) error {
