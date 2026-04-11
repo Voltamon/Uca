@@ -41,6 +41,18 @@ func Run() error {
 		return fmt.Errorf("failed to ensure go.mod: %w", err)
 	}
 
+	err = generateFrontend(&cfg)
+	if err != nil {
+		return fmt.Errorf("failed to generate frontend: %w", err)
+	}
+
+	fmt.Println("Generated: .uca/main.tsx")
+
+	err = installFrontendDeps()
+	if err != nil {
+		return fmt.Errorf("failed to install frontend dependencies: %w", err)
+	}
+
 	err = reconcileSchema(&cfg)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile schema: %w", err)

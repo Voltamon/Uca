@@ -9,10 +9,11 @@ import (
 )
 
 type TemplateVars struct {
-	AppName string
-	Name    string
-	Model   string
-	AIPort  string
+	AppName     string
+	Name        string
+	Model       string
+	AIPort      string
+	BackendPort string
 }
 
 func CopyTemplate(src string, dest string, vars TemplateVars) error {
@@ -26,6 +27,7 @@ func CopyTemplate(src string, dest string, vars TemplateVars) error {
 	content = strings.ReplaceAll(content, "{{NAME}}", vars.Name)
 	content = strings.ReplaceAll(content, "{{MODEL}}", vars.Model)
 	content = strings.ReplaceAll(content, "{{AI_PORT}}", vars.AIPort)
+	content = strings.ReplaceAll(content, "{{BACKEND_PORT}}", vars.BackendPort)
 
 	err = os.MkdirAll(filepath.Dir(dest), 0755)
 	if err != nil {

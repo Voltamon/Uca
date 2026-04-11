@@ -33,7 +33,7 @@ func generateManifest(appName string) error {
                 Desc:    "Manages user identity and onboarding",
                 Methods: []string{"GET", "POST"},
                 Schema: map[string]string{
-                    "username": "string | required",
+                    "name": "string | required",
                 },
             },
             {
