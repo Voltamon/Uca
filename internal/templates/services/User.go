@@ -6,6 +6,11 @@ import (
     "github.com/pocketbase/pocketbase/core"
 )
 
+type UserResponse struct {
+    Id   string `json:"id"`
+    Name string `json:"name"`
+}
+
 func UserGET(e *core.RequestEvent) error {
     records, err := e.App.FindAllRecords("User")
     if err != nil || len(records) == 0 {

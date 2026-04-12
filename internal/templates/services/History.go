@@ -6,16 +6,16 @@ import (
     "github.com/pocketbase/pocketbase/core"
 )
 
+type Message struct {
+    Sender    string `json:"sender"`
+    Content   string `json:"content"`
+    Timestamp string `json:"timestamp"`
+}
+
 func HistoryGET(e *core.RequestEvent) error {
     records, err := e.App.FindAllRecords("History")
     if err != nil {
         return e.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to fetch history"})
-    }
-
-    type Message struct {
-        Sender    string `json:"sender"`
-        Content   string `json:"content"`
-        Timestamp string `json:"timestamp"`
     }
 
     messages := make([]Message, len(records))
@@ -62,12 +62,6 @@ func GetChatHistory(e *core.RequestEvent) error {
     records, err := e.App.FindAllRecords("History")
     if err != nil {
         return e.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to fetch history"})
-    }
-
-    type Message struct {
-        Sender    string `json:"sender"`
-        Content   string `json:"content"`
-        Timestamp string `json:"timestamp"`
     }
 
     messages := make([]Message, len(records))

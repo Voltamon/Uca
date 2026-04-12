@@ -9,6 +9,7 @@ import (
 	"github.com/Voltamon/Uca/internal/scaffold"
 	"github.com/Voltamon/Uca/internal/runtime"
 	"github.com/Voltamon/Uca/internal/schema"
+	"github.com/Voltamon/Uca/internal/typegen"
 )
 
 func Run() (*config.Config, error) {
@@ -36,6 +37,11 @@ func Run() (*config.Config, error) {
 	}
 
 	fmt.Println("reconciliation complete")
+
+	err = generateTypes()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate types: %w", err)
+	}
 
 	err = ensureGoMod(cfg.App.Name)
 	if err != nil {
@@ -197,4 +203,8 @@ func validateConfig(cfg *config.Config) error {
 	}
 
 	return nil
+}
+
+func generateTypes() error {
+    return typegen.GenerateTypes("services", ".uca/types")
 }
