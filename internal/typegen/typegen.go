@@ -32,6 +32,8 @@ func GenerateTypes(servicesDir string, outputDir string) error {
 		return fmt.Errorf("failed to read services directory: %w", err)
 	}
 
+	var generatedFiles []string
+
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".go") {
 			continue
@@ -55,10 +57,22 @@ func GenerateTypes(servicesDir string, outputDir string) error {
 			return fmt.Errorf("failed to write %s: %w", outPath, err)
 		}
 
+		generatedFiles = append(generatedFiles, baseName)
 		fmt.Println("Generated:", outPath)
 	}
 
-	return nil
+	return generateIndex(outputDir, generatedFiles)
+}
+
+func generateIndex(outputDir string, files []string) error {
+	var sb strings.Builder
+
+	for _, f := range files {
+		sb.WriteString(fmt.Sprintf("export type * from \"./%s\"\n", f))
+	}
+
+	indexPath := filepath.Join(outputDir, "index.ts")
+	return os.WriteFile(indexPath, []byte(sb.String()), 0644)
 }
 
 func extractInterfaces(filePath string) ([]TSInterface, error) {

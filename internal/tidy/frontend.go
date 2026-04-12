@@ -26,6 +26,7 @@ func generateFrontend(cfg *config.Config) error {
 		{"uca/package.json", ".uca/package.json"},
 		{"uca/vite.config.mts", ".uca/vite.config.mts"},
 		{"uca/index.html", ".uca/index.html"},
+		{"uca/tsconfig.json", ".uca/tsconfig.json"},
 	}
 
 	for _, f := range files {
