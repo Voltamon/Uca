@@ -12,6 +12,8 @@ import (
 	"github.com/Voltamon/Uca/internal/tidy"
 	"github.com/Voltamon/Uca/internal/env"
 	"github.com/Voltamon/Uca/internal/runtime"
+	"github.com/Voltamon/Uca/internal/auth"
+	"github.com/Voltamon/Uca/internal/config"
 )
 
 func Start() error {
@@ -45,7 +47,7 @@ func Start() error {
 		return fmt.Errorf("build failed: %w", err)
 	}
 
-	return runAll(aiPort)
+	return runAll(cfg, aiPort)
 }
 
 func runGoModTidy() error {
@@ -64,9 +66,12 @@ func buildProject(backendPort string) error {
 	return cmd.Run()
 }
 
-func runAll(aiPort string) error {
+func runAll(cfg *config.Config, aiPort string) error {
+	defaultRole, _ := auth.GetDefault()
+
 	serverCmd := exec.Command("./server")
 	serverCmd.Dir = ".uca"
+	serverCmd.Env = append(os.Environ(), "UCA_DEFAULT_ROLE="+defaultRole)
 	serverCmd.Stdout = os.Stdout
 	serverCmd.Stderr = os.Stderr
 

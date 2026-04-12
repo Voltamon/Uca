@@ -50,7 +50,7 @@ func generateManifest(appName string) error {
         Agents: []config.AgentConfig{
             {
                 Name:    "Assistant",
-                Model:   "openai/gpt-4o",
+                Model:   "github/gpt-4o",
                 Timeout: 30,
                 Context: "History.GetChatHistory",
                 Tools:   []string{"History.GetChatHistory", "User.GET", "DuckDuckGo"},
