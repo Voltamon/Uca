@@ -12,7 +12,7 @@ var tidyCmd = &cobra.Command{
     Use:   "tidy",
     Short: "Reconcile project with uca.yaml",
     Run: func(cmd *cobra.Command, args []string) {
-        err := tidy.Run()
+        _, err := tidy.Run()
         if err != nil {
             fmt.Println(err)
             os.Exit(1)

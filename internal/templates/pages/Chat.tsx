@@ -33,7 +33,11 @@ export default function Chat() {
         setMessages(prev => [...prev, agentMsg])
 
         es.onmessage = (e) => {
-            agentMsg.content += e.data
+            if (e.data === "[DONE]") {
+                es.close()
+                return
+            }
+            agentMsg.content = e.data
             setMessages(prev => [...prev.slice(0, -1), { ...agentMsg }])
         }
 

@@ -21,12 +21,27 @@ func generateRegistry(cfg *config.Config) error {
 		return fmt.Errorf("failed to parse registry template: %w", err)
 	}
 
+	type AgentEntry struct {
+		Name string
+		Port string
+	}
+
+	agents := make([]AgentEntry, len(cfg.Agents))
+	for i, a := range cfg.Agents {
+		agents[i] = AgentEntry{
+			Name: a.Name,
+			Port: fmt.Sprintf("%d", cfg.App.Port.AI),
+		}
+	}
+
 	data := struct {
 		AppName  string
 		Services []config.ServiceConfig
+		Agents   []AgentEntry
 	}{
 		AppName:  cfg.App.Name,
 		Services: cfg.Services,
+		Agents:   agents,
 	}
 
 	var buf bytes.Buffer

@@ -29,13 +29,25 @@ func generateFrontend(cfg *config.Config) error {
 
 	for _, f := range files {
 		err := scaffold.CopyTemplate(f.src, f.dest, scaffold.TemplateVars{
-			AppName:     cfg.App.Name,
-			BackendPort: "8090",
+			AppName:      cfg.App.Name,
+			BackendPort:  fmt.Sprintf("%d", cfg.App.Port.Backend),
+			FrontendPort: fmt.Sprintf("%d", cfg.App.Port.Frontend),
+			AIPort:       fmt.Sprintf("%d", cfg.App.Port.AI),
 		})
 		if err != nil {
 			return fmt.Errorf("failed to generate %s: %w", f.dest, err)
 		}
 		fmt.Println("Generated:", f.dest)
+	}
+
+	err = installFrontendDeps()
+	if err != nil {
+		return err
+	}
+
+	err = installPythonDeps()
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -78,4 +90,31 @@ func installFrontendDeps() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func installPythonDeps() error {
+	if _, err := os.Stat(".uca/venv"); err == nil {
+		return nil
+	}
+
+	fmt.Println("Creating Python virtual environment...")
+	cmd := exec.Command("python3", "-m", "venv", "venv")
+	cmd.Dir = ".uca"
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to create venv: %w", err)
+	}
+
+	fmt.Println("Installing Python dependencies...")
+	cmd = exec.Command("venv/bin/pip", "install", "smolagents[litellm]", "httpx")
+	cmd.Dir = ".uca"
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to install python deps: %w", err)
+	}
+
+	fmt.Println("Python dependencies installed")
+	return nil
 }

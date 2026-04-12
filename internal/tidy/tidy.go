@@ -10,74 +10,72 @@ import (
 	"github.com/Voltamon/Uca/internal/schema"
 )
 
-func Run() error {
+func Run() (*config.Config, error) {
 	data, err := os.ReadFile("uca.yaml")
 	if err != nil {
-		return fmt.Errorf("uca.yaml not found — are you inside a uca project? %w", err)
+		return nil, fmt.Errorf("uca.yaml not found — are you inside a uca project? %w", err)
 	}
 
 	var cfg config.Config
 	err = yaml.Unmarshal(data, &cfg)
 	if err != nil {
-		return fmt.Errorf("failed to parse uca.yaml: %w", err)
+		return nil, fmt.Errorf("failed to parse uca.yaml: %w", err)
 	}
 
 	err = validateConfig(&cfg)
 	if err != nil {
-		return fmt.Errorf("invalid uca.yaml: %w", err)
+		return nil, fmt.Errorf("invalid uca.yaml: %w", err)
 	}
 
 	fmt.Println("uca.yaml is valid")
 
 	err = reconcileFiles(&cfg)
 	if err != nil {
-		return fmt.Errorf("failed to reconcile files: %w", err)
+		return nil, fmt.Errorf("failed to reconcile files: %w", err)
 	}
 
 	fmt.Println("reconciliation complete")
 
 	err = ensureGoMod(cfg.App.Name)
 	if err != nil {
-		return fmt.Errorf("failed to ensure go.mod: %w", err)
+		return nil, fmt.Errorf("failed to ensure go.mod: %w", err)
 	}
 
 	err = generateFrontend(&cfg)
 	if err != nil {
-		return fmt.Errorf("failed to generate frontend: %w", err)
-	}
-
-	fmt.Println("Generated: .uca/main.tsx")
-
-	err = installFrontendDeps()
-	if err != nil {
-		return fmt.Errorf("failed to install frontend dependencies: %w", err)
+		return nil, fmt.Errorf("failed to generate frontend: %w", err)
 	}
 
 	err = reconcileSchema(&cfg)
 	if err != nil {
-		return fmt.Errorf("failed to reconcile schema: %w", err)
+		return nil, fmt.Errorf("failed to reconcile schema: %w", err)
 	}
 
 	err = generateRegistry(&cfg)
 	if err != nil {
-		return fmt.Errorf("failed to generate registry: %w", err)
+		return nil, fmt.Errorf("failed to generate registry: %w", err)
 	}
 
 	fmt.Println("Generated: .uca/uca/registry.go")
 
 	err = generateUcaPackage(cfg.App.Name)
 	if err != nil {
-		return fmt.Errorf("failed to generate uca package: %w", err)
+		return nil, fmt.Errorf("failed to generate uca package: %w", err)
+	}
+
+	err = generateAgentServer(&cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate agent server: %w", err)
 	}
 
 	err = generateDevMain(cfg.App.Name)
 	if err != nil {
-		return fmt.Errorf("failed to generate dev main: %w", err)
+		return nil, fmt.Errorf("failed to generate dev main: %w", err)
 	}
 
 	fmt.Println("Generated: .uca/main.go")
 
-	return nil
+	return &cfg, nil
 }
 
 func reconcileSchema(cfg *config.Config) error {
@@ -153,6 +151,16 @@ func validateConfig(cfg *config.Config) error {
 
 	if cfg.App.Version == "" {
 		return fmt.Errorf("app.version is required")
+	}
+
+	if cfg.App.Port.Frontend == 0 {
+		cfg.App.Port.Frontend = 5173
+	}
+	if cfg.App.Port.Backend == 0 {
+		cfg.App.Port.Backend = 8090
+	}
+	if cfg.App.Port.AI == 0 {
+		cfg.App.Port.AI = 8091
 	}
 
 	for _, page := range cfg.Pages {
