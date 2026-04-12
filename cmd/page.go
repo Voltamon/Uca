@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/Voltamon/Uca/internal/manifest"
+"github.com/Voltamon/Uca/internal/prompt"
 )
 
 var pageCmd = &cobra.Command{
@@ -17,15 +18,32 @@ var pageCmd = &cobra.Command{
 var pageAddCmd = &cobra.Command{
 	Use:   "add [name] [route]",
 	Short: "Add a new page",
-	Args:  cobra.RangeArgs(1, 2),
+	Args:  cobra.RangeArgs(0, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		name := args[0]
-		route := "/" + strings.ToLower(name)
-		if len(args) == 2 {
-			route = args[1]
+		var name, route string
+		var err error
+
+		if len(args) >= 1 {
+			name = args[0]
+		} else {
+			name, err = prompt.AskRequired("Page name")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 		}
 
-		err := manifest.AddPage(name, route)
+		if len(args) >= 2 {
+			route = args[1]
+		} else {
+			route, err = prompt.AskDefault("Route", "/"+strings.ToLower(name))
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		}
+
+		err = manifest.AddPage(name, route)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -38,14 +56,40 @@ var pageAddCmd = &cobra.Command{
 var pageRemoveCmd = &cobra.Command{
 	Use:   "remove [name]",
 	Short: "Remove a page",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := manifest.RemovePage(args[0])
+		var name string
+		var err error
+
+		if len(args) >= 1 {
+			name = args[0]
+		} else {
+			pages, err := manifest.ListPages()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			if len(pages) == 0 {
+				fmt.Println("No pages defined")
+				return
+			}
+			fmt.Println("Available pages:")
+			for _, p := range pages {
+				fmt.Printf("  %s → %s\n", p.Name, p.Route)
+			}
+			name, err = prompt.AskRequired("Page name to remove")
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		}
+
+		err = manifest.RemovePage(name)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Printf("Removed page %q\n", args[0])
+		fmt.Printf("Removed page %q\n", name)
 	},
 }
 
