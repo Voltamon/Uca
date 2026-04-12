@@ -31,7 +31,3 @@ func writeConfig(cfg *config.Config) error {
 
 	return os.WriteFile("uca.yaml", data, 0644)
 }
-
-func SaveConfig(cfg *config.Config) error {
-	return writeConfig(cfg)
-}

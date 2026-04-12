@@ -7,9 +7,8 @@ import (
 )
 
 type UserResponse struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	Role string `json:"role"`
+    Id   string `json:"id"`
+    Name string `json:"name"`
 }
 
 func UserGET(e *core.RequestEvent) error {
@@ -19,43 +18,37 @@ func UserGET(e *core.RequestEvent) error {
     }
 
     record := records[0]
-    return e.JSON(http.StatusOK, UserResponse{
-    	Id:   record.Id,
-		Name: record.GetString("name"),
-		Role: record.GetString("role"),
-	})
+    return e.JSON(http.StatusOK, map[string]string{
+        "id":   record.Id,
+        "name": record.GetString("name"),
+    })
 }
 
 func UserPOST(e *core.RequestEvent) error {
-	var body struct {
-		Name string `json:"name"`
-	}
+    var body struct {
+        Name string `json:"name"`
+    }
 
-	err := e.BindBody(&body)
-	if err != nil || body.Name == "" {
-		return e.JSON(http.StatusBadRequest, map[string]string{"error": "name is required"})
-	}
+    err := e.BindBody(&body)
+    if err != nil || body.Name == "" {
+        return e.JSON(http.StatusBadRequest, map[string]string{"error": "name is required"})
+    }
 
-	collection, err := e.App.FindCollectionByNameOrId("User")
-	if err != nil {
-		return e.JSON(http.StatusInternalServerError, map[string]string{"error": "collection not found"})
-	}
+    collection, err := e.App.FindCollectionByNameOrId("User")
+    if err != nil {
+        return e.JSON(http.StatusInternalServerError, map[string]string{"error": "collection not found"})
+    }
 
-	defaultRole := os.Getenv("UCA_DEFAULT_ROLE")
+    record := core.NewRecord(collection)
+    record.Set("name", body.Name)
 
-	record := core.NewRecord(collection)
-	record.Set("name", body.Name)
-	if defaultRole != "" {
-		record.Set("role", defaultRole)
-	}
+    err = e.App.Save(record)
+    if err != nil {
+        return e.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to save user"})
+    }
 
-	err = e.App.Save(record)
-	if err != nil {
-		return e.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to save user"})
-	}
-
-	return e.JSON(http.StatusCreated, UserResponse{
-		Id:   record.Id,
-		Name: record.GetString("name"),
-	})
+    return e.JSON(http.StatusCreated, map[string]string{
+        "id":   record.Id,
+        "name": record.GetString("name"),
+    })
 }
