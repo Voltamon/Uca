@@ -1,0 +1,25 @@
+import { render } from "preact"
+import { useState, useEffect } from "preact/hooks"
+import "@picocss/pico/css/pico.min.css"
+{{- range .Pages}}
+import {{.Name}} from "./pages/{{.Name}}"
+{{- end}}
+
+function Router() {
+    const [path, setPath] = useState(window.location.pathname)
+
+    useEffect(() => {
+        const handler = () => setPath(window.location.pathname)
+        window.addEventListener("popstate", handler)
+        return () => window.removeEventListener("popstate", handler)
+    }, [])
+
+    switch(path) {
+{{- range .Pages}}
+        case "{{.Route}}": return <{{.Name}} />
+{{- end}}
+        default: return <{{(index .Pages 0).Name}} />
+    }
+}
+
+render(<Router />, document.getElementById("app"))

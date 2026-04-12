@@ -1,0 +1,147 @@
+package uca
+
+import (
+	"encoding/json"
+	"log"
+	"os"
+
+	"github.com/pocketbase/pocketbase/core"
+)
+
+var builtinFields = map[string]bool{
+	"id":      true,
+	"created": true,
+	"updated": true,
+}
+
+func normalizeType(t string) string {
+	if t == "string" {
+		return "text"
+	}
+	return t
+}
+
+func RunMigrations(app core.App) {
+	data, err := os.ReadFile("schema.json")
+	if err != nil {
+		log.Println("No schema.json found, skipping migrations")
+		return
+	}
+
+	var s Schema
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		log.Fatal("Failed to parse schema.json:", err)
+	}
+
+	for _, collection := range s.Collections {
+		existing, _ := app.FindCollectionByNameOrId(collection.Name)
+		if existing == nil {
+			createCollection(app, collection)
+		} else {
+			updateCollection(app, existing, collection)
+		}
+	}
+}
+
+func createCollection(app core.App, c Collection) {
+	collection := core.NewBaseCollection(c.Name)
+	for _, f := range c.Fields {
+		addField(collection, f)
+	}
+	if err := app.Save(collection); err != nil {
+		log.Fatal("Failed to create collection:", c.Name, err)
+	}
+	log.Println("Created collection:", c.Name)
+}
+
+func updateCollection(app core.App, existing *core.Collection, desired Collection) {
+	changed := false
+
+	desiredFields := make(map[string]Field)
+	for _, f := range desired.Fields {
+		desiredFields[f.Name] = f
+	}
+
+	existingFields := make(map[string]bool)
+	for _, f := range existing.Fields {
+		existingFields[f.GetName()] = true
+	}
+
+	for _, f := range desired.Fields {
+		if !existingFields[f.Name] {
+			addField(existing, f)
+			changed = true
+			log.Println("Added field:", f.Name, "to", desired.Name)
+		}
+	}
+
+	for i := len(existing.Fields) - 1; i >= 0; i-- {
+		f := existing.Fields[i]
+		if builtinFields[f.GetName()] {
+			continue
+		}
+		if _, exists := desiredFields[f.GetName()]; !exists {
+			existing.Fields = append(existing.Fields[:i], existing.Fields[i+1:]...)
+			changed = true
+			log.Println("Removed field:", f.GetName(), "from", desired.Name)
+		}
+	}
+
+	for _, f := range desired.Fields {
+		for i, ef := range existing.Fields {
+			if builtinFields[ef.GetName()] {
+				continue
+			}
+			if ef.GetName() == f.Name && normalizeType(ef.Type()) != normalizeType(f.Type) {
+				existing.Fields = append(existing.Fields[:i], existing.Fields[i+1:]...)
+				addField(existing, f)
+				changed = true
+				log.Println("Changed field type:", f.Name, "in", desired.Name)
+				break
+			}
+		}
+	}
+
+	if changed {
+		if err := app.Save(existing); err != nil {
+			log.Fatal("Failed to update collection:", desired.Name, err)
+		}
+	}
+}
+
+func addField(collection *core.Collection, f Field) {
+	switch f.Type {
+	case "string", "text":
+		field := &core.TextField{
+			Name:     f.Name,
+			Required: f.Required,
+		}
+		collection.Fields.Add(field)
+	case "select":
+		field := &core.SelectField{
+			Name:     f.Name,
+			Required: f.Required,
+			Values:   f.Options,
+		}
+		collection.Fields.Add(field)
+	case "date":
+		field := &core.DateField{
+			Name:     f.Name,
+			Required: f.Required,
+		}
+		collection.Fields.Add(field)
+	case "bool":
+		field := &core.BoolField{
+			Name:     f.Name,
+			Required: f.Required,
+		}
+		collection.Fields.Add(field)
+	case "number":
+		field := &core.NumberField{
+			Name:     f.Name,
+			Required: f.Required,
+		}
+		collection.Fields.Add(field)
+	}
+}

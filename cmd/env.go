@@ -18,7 +18,13 @@ var keysAddCmd = &cobra.Command{
 	Short: "Add an environment variable",
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := env.Add(args[0], args[1])
+		err := env.EnsureKeyDeclared(args[0])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		err = env.Add(args[0], args[1])
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

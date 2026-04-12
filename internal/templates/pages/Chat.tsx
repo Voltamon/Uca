@@ -21,16 +21,26 @@ export default function Chat() {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [messages])
 
+    const saveMessage = (sender, content) => {
+        fetch("/api/History", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sender, content })
+        })
+    }
+
     const sendMessage = () => {
         if (!input.trim()) return
 
         const userMsg = { sender: "user", content: input, timestamp: new Date().toISOString() }
         setMessages(prev => [...prev, userMsg])
+        saveMessage("user", input)
         setInput("")
 
-        const es = new EventSource("/api/chat/Assistant?message=" + encodeURIComponent(input))
-        let agentMsg = { sender: "agent", content: "", timestamp: new Date().toISOString() }
+        const agentMsg = { sender: "agent", content: "", timestamp: new Date().toISOString() }
         setMessages(prev => [...prev, agentMsg])
+
+        const es = new EventSource("/api/chat/Assistant?message=" + encodeURIComponent(userMsg.content))
 
         es.onmessage = (e) => {
             if (e.data === "[DONE]") {
@@ -39,6 +49,7 @@ export default function Chat() {
             }
             agentMsg.content = e.data
             setMessages(prev => [...prev.slice(0, -1), { ...agentMsg }])
+            saveMessage("agent", e.data)
         }
 
         es.onerror = () => es.close()
@@ -49,7 +60,7 @@ export default function Chat() {
             display: "flex",
             flexDirection: "column",
             height: "100vh",
-            maxWidth: "680px",
+            maxWidth: "98%",
             margin: "0 auto",
             padding: "1rem"
         }}>

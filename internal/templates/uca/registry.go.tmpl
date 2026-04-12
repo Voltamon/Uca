@@ -1,0 +1,25 @@
+package uca
+
+import (
+	"github.com/pocketbase/pocketbase/core"
+	"{{.AppName}}/services"
+)
+
+type HandlerFunc func(e *core.RequestEvent) error
+
+var Registry = map[string]map[string]HandlerFunc{
+{{- range .Services}}
+	{{- $serviceName := .Name}}
+	"{{.Name}}": {
+	{{- range .Methods}}
+		"{{.}}": services.{{$serviceName}}{{.}},
+	{{- end}}
+	},
+{{- end}}
+}
+
+var Agents = map[string]string{
+{{- range .Agents}}
+	"{{.Name}}": "{{.Port}}",
+{{- end}}
+}

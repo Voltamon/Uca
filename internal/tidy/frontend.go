@@ -85,7 +85,7 @@ func installFrontendDeps() error {
 	}
 
 	fmt.Println("Installing frontend dependencies...")
-	cmd := exec.Command("npm", "install")
+	cmd := exec.Command("npm", "install", "--silent")
 	cmd.Dir = ".uca"
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -107,7 +107,7 @@ func installPythonDeps() error {
 	}
 
 	fmt.Println("Installing Python dependencies...")
-	cmd = exec.Command("venv/bin/pip", "install", "smolagents[litellm]", "httpx")
+	cmd = exec.Command("venv/bin/pip", "install", "--quiet", "smolagents[litellm]", "httpx", "litellm")
 	cmd.Dir = ".uca"
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
