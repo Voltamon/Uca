@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"github.com/Voltamon/Uca/internal/config"
 	"github.com/Voltamon/Uca/internal/scaffold"
+	"github.com/Voltamon/Uca/internal/runtime"
 	"github.com/Voltamon/Uca/internal/schema"
 )
 
@@ -39,6 +40,11 @@ func Run() (*config.Config, error) {
 	err = ensureGoMod(cfg.App.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to ensure go.mod: %w", err)
+	}
+
+	err = runtime.EnsureAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to ensure runtimes: %w", err)
 	}
 
 	err = generateFrontend(&cfg)

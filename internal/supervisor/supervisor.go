@@ -11,6 +11,7 @@ import (
 
 	"github.com/Voltamon/Uca/internal/tidy"
 	"github.com/Voltamon/Uca/internal/env"
+	"github.com/Voltamon/Uca/internal/runtime"
 )
 
 func Start() error {
@@ -69,7 +70,7 @@ func runAll(aiPort string) error {
 	serverCmd.Stdout = os.Stdout
 	serverCmd.Stderr = os.Stderr
 
-	viteCmd := exec.Command("npm", "run", "dev")
+	viteCmd := exec.Command("../"+runtime.NodeBin(), "node_modules/.bin/vite")
 	viteCmd.Dir = ".uca"
 	viteCmd.Stdout = os.Stdout
 	viteCmd.Stderr = os.Stderr
@@ -148,7 +149,7 @@ func watchAgent(cmd *exec.Cmd, aiPort string, done chan error) {
 
 		time.Sleep(time.Second)
 
-		cmd = exec.Command("venv/bin/python3", "server.py")
+		cmd := exec.Command("venv/bin/python3", "server.py")
 		cmd.Dir = ".uca"
 		cmd.Env = append(os.Environ(), "AI_PORT="+aiPort)
 		err = cmd.Start()

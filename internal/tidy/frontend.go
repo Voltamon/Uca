@@ -10,6 +10,7 @@ import (
 	"github.com/Voltamon/Uca/internal/config"
 	"github.com/Voltamon/Uca/internal/scaffold"
 	"github.com/Voltamon/Uca/internal/templates"
+	"github.com/Voltamon/Uca/internal/runtime"
 )
 
 func generateFrontend(cfg *config.Config) error {
@@ -85,8 +86,7 @@ func installFrontendDeps() error {
 	}
 
 	fmt.Println("Installing frontend dependencies...")
-	cmd := exec.Command("npm", "install", "--silent")
-	cmd.Dir = ".uca"
+	cmd := exec.Command(runtime.NodeBin(), runtime.NpmBin(), "install", "--silent", "--prefix", ".uca")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
@@ -98,8 +98,7 @@ func installPythonDeps() error {
 	}
 
 	fmt.Println("Creating Python virtual environment...")
-	cmd := exec.Command("python3", "-m", "venv", "venv")
-	cmd.Dir = ".uca"
+	cmd := exec.Command(runtime.PythonBin(), "-m", "venv", ".uca/venv")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -107,8 +106,7 @@ func installPythonDeps() error {
 	}
 
 	fmt.Println("Installing Python dependencies...")
-	cmd = exec.Command("venv/bin/pip", "install", "--quiet", "smolagents[litellm]", "httpx", "litellm")
-	cmd.Dir = ".uca"
+	cmd = exec.Command(".uca/venv/bin/pip", "install", "--quiet", "smolagents[litellm]", "httpx", "litellm")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
