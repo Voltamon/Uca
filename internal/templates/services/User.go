@@ -2,7 +2,6 @@ package services
 
 import (
     "net/http"
-    "os"
 
     "github.com/pocketbase/pocketbase/core"
 )
@@ -44,7 +43,7 @@ func UserPOST(e *core.RequestEvent) error {
 
 	record := core.NewRecord(collection)
 	record.Set("name", body.Name)
-	record.Set("role", os.Getenv("UCA_DEFAULT_ROLE"))
+	record.Set("role", "{{DEFAULT_ROLE}}")
 
 	err = e.App.Save(record)
 	if err != nil {

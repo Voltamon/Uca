@@ -15,6 +15,7 @@ type TemplateVars struct {
 	AIPort      string
 	BackendPort string
 	FrontendPort string
+	DefaultRole string
 }
 
 func CopyTemplate(src string, dest string, vars TemplateVars) error {
@@ -30,6 +31,7 @@ func CopyTemplate(src string, dest string, vars TemplateVars) error {
 	content = strings.ReplaceAll(content, "{{AI_PORT}}", vars.AIPort)
 	content = strings.ReplaceAll(content, "{{BACKEND_PORT}}", vars.BackendPort)
 	content = strings.ReplaceAll(content, "{{FRONTEND_PORT}}", vars.FrontendPort)
+	content = strings.ReplaceAll(content, "{{DEFAULT_ROLE}}", vars.DefaultRole)
 
 	err = os.MkdirAll(filepath.Dir(dest), 0755)
 	if err != nil {
@@ -39,11 +41,12 @@ func CopyTemplate(src string, dest string, vars TemplateVars) error {
 	return os.WriteFile(dest, []byte(content), 0644)
 }
 
-func GenerateFiles(appName string, model string, aiPort string) error {
+func GenerateFiles(appName string, model string, aiPort string, defaultRole string) error {
 	vars := TemplateVars{
-		AppName: appName,
-		Model:   model,
-		AIPort:  aiPort,
+		AppName:     appName,
+		Model:       model,
+		AIPort:      aiPort,
+		DefaultRole: defaultRole,
 	}
 
 	files := []struct {

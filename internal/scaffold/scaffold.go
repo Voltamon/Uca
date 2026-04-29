@@ -31,7 +31,7 @@ func InitProject(appName string) error {
 
     fmt.Println("Generated: uca.yaml")
 
-    err = GenerateFiles(appName, "openai/gpt-4o", "8090")
+    err = GenerateFiles(appName, "github/gpt-4o", "8090", "user")
     if err != nil {
         return fmt.Errorf("failed to generate files: %w", err)
     }

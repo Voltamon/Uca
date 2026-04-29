@@ -134,6 +134,12 @@ func reconcileSchema(cfg *config.Config) error {
 }
 
 func reconcileFiles(cfg *config.Config) error {
+	rolesCfg, _ := auth.Load()
+	defaultRole := auth.DefaultRole
+	if len(rolesCfg.Roles) > 0 {
+		defaultRole = rolesCfg.Roles[0]
+	}
+
 	for _, page := range cfg.Pages {
 		path := "pages/" + page.Name + ".tsx"
 		if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -151,7 +157,8 @@ func reconcileFiles(cfg *config.Config) error {
 		path := "services/" + service.Name + ".go"
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			err = scaffold.CopyTemplate("services/default.go", path, scaffold.TemplateVars{
-				Name: service.Name,
+				Name:        service.Name,
+				DefaultRole: defaultRole,
 			})
 			if err != nil {
 				return fmt.Errorf("failed to create %s: %w", path, err)

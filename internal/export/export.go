@@ -85,6 +85,15 @@ func stripCrossOrigin(path string) error {
 }
 
 func buildServer() error {
+	fmt.Println("Resolving dependencies...")
+	tidy := exec.Command("go", "mod", "tidy")
+	tidy.Dir = ".uca"
+	tidy.Stdout = os.Stdout
+	tidy.Stderr = os.Stderr
+	if err := tidy.Run(); err != nil {
+		return fmt.Errorf("go mod tidy failed: %w", err)
+	}
+
 	cmd := exec.Command("go", "build", "-o", "server")
 	cmd.Dir = ".uca"
 	cmd.Stdout = os.Stdout
