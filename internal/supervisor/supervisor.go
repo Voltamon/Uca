@@ -147,7 +147,7 @@ func startAgent(aiPort string) (*exec.Cmd, error) {
 	}
 
 	fmt.Println("Waiting for agent to be ready...")
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 12; i++ {
 		resp, err := http.Get("http://127.0.0.1:" + aiPort + "/health")
 		if err == nil && resp.StatusCode == 200 {
 			fmt.Println("Agent ready on http://127.0.0.1:" + aiPort)
