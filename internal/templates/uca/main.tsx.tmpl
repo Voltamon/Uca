@@ -4,9 +4,32 @@ import "@picocss/pico/css/pico.min.css"
 {{- range .Pages}}
 import {{.Name}} from "./pages/{{.Name}}"
 {{- end}}
+{{- if .HasRoles}}
+import { roles } from "uca/roles"
+{{- end}}
+
+async function getUser() {
+    try {
+        const res = await fetch("/api/User")
+        const data = await res.json()
+        if (data && data.name) return data
+    } catch {}
+    return null
+}
 
 function Router() {
     const [path, setPath] = useState(window.location.pathname)
+    const [user, setUser] = useState(null)
+    const [loading, setLoading] = useState({{.HasRoles}})
+
+    useEffect(() => {
+        {{- if .HasRoles}}
+        getUser().then(u => {
+            setUser(u)
+            setLoading(false)
+        })
+        {{- end}}
+    }, [])
 
     useEffect(() => {
         const handler = () => setPath(window.location.pathname)
@@ -14,9 +37,20 @@ function Router() {
         return () => window.removeEventListener("popstate", handler)
     }, [])
 
+    if (loading) return <div>Loading...</div>
+
     switch(path) {
 {{- range .Pages}}
+{{- if .Role}}
+        case "{{.Route}}":
+            if (!user || user.role !== roles.{{.Role}}) {
+                window.location.href = "/"
+                return null
+            }
+            return <{{.Name}} />
+{{- else}}
         case "{{.Route}}": return <{{.Name}} />
+{{- end}}
 {{- end}}
         default: return <{{(index .Pages 0).Name}} />
     }

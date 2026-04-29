@@ -7,7 +7,8 @@
     "jsxImportSource": "preact",
     "strict": true,
     "paths": {
-      "uca/types": ["./types/index.ts"]
+      "uca/types": ["./types/index.ts"],
+      "uca/roles": ["./roles/index.ts"]
     }
   },
   "include": [

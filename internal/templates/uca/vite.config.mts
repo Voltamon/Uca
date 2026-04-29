@@ -6,9 +6,10 @@ export default defineConfig({
   plugins: [preact()],
   root: ".",
   resolve: {
-    alias: {
-      "uca/types": resolve(__dirname, "types/index.ts")
-    }
+      alias: {
+        "uca/types": resolve(__dirname, "types/index.ts"),
+        "uca/roles": resolve(__dirname, "roles/index.ts")
+      }
   },
   server: {
     port: {{FRONTEND_PORT}},

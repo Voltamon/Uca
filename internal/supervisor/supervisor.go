@@ -12,6 +12,7 @@ import (
 	"github.com/Voltamon/Uca/internal/tidy"
 	"github.com/Voltamon/Uca/internal/env"
 	"github.com/Voltamon/Uca/internal/runtime"
+	"github.com/Voltamon/Uca/internal/auth"
 )
 
 func Start() error {
@@ -65,8 +66,11 @@ func buildProject(backendPort string) error {
 }
 
 func runAll(aiPort string) error {
+	defaultRole := auth.DefaultRole
+
 	serverCmd := exec.Command("./server")
 	serverCmd.Dir = ".uca"
+	serverCmd.Env = append(os.Environ(), "UCA_DEFAULT_ROLE="+defaultRole)
 	serverCmd.Stdout = os.Stdout
 	serverCmd.Stderr = os.Stderr
 

@@ -66,10 +66,20 @@ func generateMainTsx(cfg *config.Config) error {
 		return fmt.Errorf("failed to parse main.tsx template: %w", err)
 	}
 
+	hasRoles := false
+	for _, page := range cfg.Pages {
+		if page.Role != "" {
+			hasRoles = true
+			break
+		}
+	}
+
 	data := struct {
-		Pages []config.PageConfig
+		Pages    []config.PageConfig
+		HasRoles bool
 	}{
-		Pages: cfg.Pages,
+		Pages:    cfg.Pages,
+		HasRoles: hasRoles,
 	}
 
 	var buf bytes.Buffer
@@ -78,7 +88,13 @@ func generateMainTsx(cfg *config.Config) error {
 		return fmt.Errorf("failed to execute main.tsx template: %w", err)
 	}
 
-	return os.WriteFile(".uca/main.tsx", buf.Bytes(), 0644)
+	err = os.WriteFile(".uca/main.tsx", buf.Bytes(), 0644)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Generated: .uca/main.tsx")
+	return nil
 }
 
 func installFrontendDeps() error {

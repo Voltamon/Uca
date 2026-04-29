@@ -3,6 +3,7 @@ package tidy
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 	"github.com/Voltamon/Uca/internal/config"
@@ -10,6 +11,8 @@ import (
 	"github.com/Voltamon/Uca/internal/runtime"
 	"github.com/Voltamon/Uca/internal/schema"
 	"github.com/Voltamon/Uca/internal/typegen"
+	"github.com/Voltamon/Uca/internal/auth"
+	"github.com/Voltamon/Uca/internal/manifest"
 )
 
 func Run() (*config.Config, error) {
@@ -31,6 +34,11 @@ func Run() (*config.Config, error) {
 
 	fmt.Println("uca.yaml is valid")
 
+	err = reconcileRoles(&cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reconcile roles: %w", err)
+	}
+
 	err = reconcileFiles(&cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to reconcile files: %w", err)
@@ -46,6 +54,11 @@ func Run() (*config.Config, error) {
 	err = ensureGoMod(cfg.App.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to ensure go.mod: %w", err)
+	}
+
+	err = generateRolesPackage()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate roles package: %w", err)
 	}
 
 	err = runtime.EnsureAll()
@@ -203,6 +216,48 @@ func validateConfig(cfg *config.Config) error {
 	}
 
 	return nil
+}
+
+func reconcileRoles(cfg *config.Config) error {
+	roles := []string{}
+	for _, page := range cfg.Pages {
+		if page.Role != "" {
+			roles = append(roles, page.Role)
+		}
+	}
+
+	err := auth.SyncFromConfig(roles)
+	if err != nil {
+		return err
+	}
+
+	err = auth.EnsureDefaultRole()
+	if err != nil {
+		return err
+	}
+
+	rolesCfg, err := auth.Load()
+	if err != nil {
+		return err
+	}
+
+	if len(rolesCfg.Roles) == 0 {
+		return nil
+	}
+
+	for i, service := range cfg.Services {
+		if service.Name != "User" {
+			continue
+		}
+		if cfg.Services[i].Schema == nil {
+			cfg.Services[i].Schema = make(map[string]string)
+		}
+		roleType := "select:" + strings.Join(rolesCfg.Roles, ",") + " | required"
+		cfg.Services[i].Schema["role"] = roleType
+		break
+	}
+
+	return manifest.SaveConfig(cfg)
 }
 
 func generateTypes() error {
