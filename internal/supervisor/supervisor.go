@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"path/filepath"
 
 	"github.com/Voltamon/Uca/internal/tidy"
 	"github.com/Voltamon/Uca/internal/env"
@@ -15,7 +16,11 @@ import (
 	"github.com/Voltamon/Uca/internal/auth"
 )
 
+var defaultRole string
+
 func Start() error {
+	defaultRole = auth.DefaultRole
+
 	envVars, err := env.Load()
 	if err != nil {
 		return fmt.Errorf("failed to load .env: %w", err)
@@ -66,33 +71,36 @@ func buildProject(backendPort string) error {
 }
 
 func runAll(aiPort string) error {
-	defaultRole := auth.DefaultRole
+	serverProcess = exec.Command("./server")
+	serverProcess.Dir = ".uca"
+	serverProcess.Env = append(os.Environ(), "UCA_DEFAULT_ROLE="+defaultRole)
+	serverProcess.Stdout = os.Stdout
+	serverProcess.Stderr = os.Stderr
 
-	serverCmd := exec.Command("./server")
-	serverCmd.Dir = ".uca"
-	serverCmd.Env = append(os.Environ(), "UCA_DEFAULT_ROLE="+defaultRole)
-	serverCmd.Stdout = os.Stdout
-	serverCmd.Stderr = os.Stderr
+	absNodeBin, err := filepath.Abs(runtime.NodeBin())
+	if err != nil {
+		return fmt.Errorf("failed to resolve node path: %w", err)
+	}
 
-	viteCmd := exec.Command("../"+runtime.NodeBin(), "node_modules/.bin/vite")
+	viteCmd := exec.Command(absNodeBin, "node_modules/.bin/vite")
 	viteCmd.Dir = ".uca"
 	viteCmd.Stdout = os.Stdout
 	viteCmd.Stderr = os.Stderr
 
-	err := serverCmd.Start()
+	err = serverProcess.Start()
 	if err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
 	err = viteCmd.Start()
 	if err != nil {
-		serverCmd.Process.Kill()
+		serverProcess.Process.Kill()
 		return fmt.Errorf("failed to start vite: %w", err)
 	}
 
 	agentCmd, err := startAgent(aiPort)
 	if err != nil {
-		serverCmd.Process.Kill()
+		serverProcess.Process.Kill()
 		viteCmd.Process.Kill()
 		return fmt.Errorf("failed to start agent: %w", err)
 	}
@@ -102,19 +110,27 @@ func runAll(aiPort string) error {
 
 	done := make(chan error, 3)
 
-	go func() { done <- serverCmd.Wait() }()
+	go func() {
+    	err := serverProcess.Wait()
+    	if err != nil && err.Error() == "signal: killed" {
+        	return
+    	}
+    	done <- err
+	}()
+
 	go func() { done <- viteCmd.Wait() }()
 	go watchAgent(agentCmd, aiPort, done)
+	go watchServices(done)
 
 	select {
 	case <-quit:
 		fmt.Println("\nShutting down...")
-		serverCmd.Process.Kill()
+		serverProcess.Process.Kill()
 		viteCmd.Process.Kill()
 		agentCmd.Process.Kill()
 		return nil
 	case err := <-done:
-		serverCmd.Process.Kill()
+		serverProcess.Process.Kill()
 		viteCmd.Process.Kill()
 		agentCmd.Process.Kill()
 		return err
