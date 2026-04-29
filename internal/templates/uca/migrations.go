@@ -42,6 +42,8 @@ func RunMigrations(app core.App) {
 			updateCollection(app, existing, collection)
 		}
 	}
+
+	log.Println("Migrations complete")
 }
 
 func createCollection(app core.App, c Collection) {

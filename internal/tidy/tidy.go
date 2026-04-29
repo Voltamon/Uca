@@ -106,6 +106,14 @@ func Run() (*config.Config, error) {
 func reconcileSchema(cfg *config.Config) error {
 	desired := schema.ParseFromConfig(cfg)
 
+	rolesCfg, err := auth.Load()
+	if err != nil {
+		return fmt.Errorf("failed to load roles: %w", err)
+	}
+
+	desired.Roles = rolesCfg.Roles
+	desired.DefaultRole = auth.DefaultRole
+
 	current, err := schema.LoadSnapshot()
 	if err != nil {
 		return fmt.Errorf("failed to load schema snapshot: %w", err)

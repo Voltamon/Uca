@@ -2,6 +2,8 @@ package schema
 
 type Schema struct {
 	Collections []Collection `json:"collections"`
+	Roles       []string     `json:"roles,omitempty"`
+	DefaultRole string       `json:"default_role,omitempty"`
 }
 
 type Collection struct {

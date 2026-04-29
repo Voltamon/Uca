@@ -138,7 +138,7 @@ func runAll(aiPort string) error {
 }
 
 func startAgent(aiPort string) (*exec.Cmd, error) {
-	cmd := exec.Command("venv/bin/python3", "server.py")
+	cmd := exec.Command("venv/bin/python3", "venv/server.py")
 	cmd.Dir = ".uca"
 	cmd.Env = append(os.Environ(), "AI_PORT="+aiPort)
 	err := cmd.Start()
@@ -169,7 +169,7 @@ func watchAgent(cmd *exec.Cmd, aiPort string, done chan error) {
 
 		time.Sleep(time.Second)
 
-		cmd := exec.Command("venv/bin/python3", "server.py")
+		cmd := exec.Command("venv/bin/python3", "venv/server.py")
 		cmd.Dir = ".uca"
 		cmd.Env = append(os.Environ(), "AI_PORT="+aiPort)
 		err = cmd.Start()
