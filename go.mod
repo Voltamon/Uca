@@ -3,6 +3,8 @@ module github.com/Voltamon/Uca
 go 1.26.1
 
 require (
+	github.com/fsnotify/fsnotify v1.9.0
+	github.com/klauspost/compress v1.18.5
 	github.com/pocketbase/pocketbase v0.36.9
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
@@ -14,7 +16,6 @@ require (
 	github.com/domodwyer/mailyak/v3 v3.6.2 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.19.0 // indirect
-	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/ganigeorgiev/fexpr v0.5.0 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect

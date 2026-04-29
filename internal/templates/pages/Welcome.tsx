@@ -5,12 +5,16 @@ export default function Welcome() {
 
     useEffect(() => {
         fetch("/api/User")
-            .then(res => res.json())
+            .then(res => {
+                if (res.status === 404) return null
+                return res.json()
+            })
             .then(data => {
                 if (data && data.name) {
                     window.location.href = "/chat"
                 }
             })
+            .catch(() => {})
     }, [])
 
     const handleSubmit = (e) => {
@@ -38,7 +42,7 @@ export default function Welcome() {
         }}>
             <article style={{ width: "100%", maxWidth: "400px" }}>
                 <header>
-                    <h2>Welcome to {{APP_NAME}}</h2>
+                    <h2>Welcome to blogify</h2>
                     <p>Tell us your name to get started</p>
                 </header>
                 <form onSubmit={handleSubmit}>

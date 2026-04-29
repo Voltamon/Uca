@@ -40,20 +40,24 @@ function Router() {
     if (loading) return <div>Loading...</div>
 
     switch(path) {
-{{- range .Pages}}
-{{- if .Role}}
+        {{- range .Pages}}
+        {{- if .Role}}
         case "{{.Route}}":
             if (!user || user.role !== roles.{{.Role}}) {
                 window.location.href = "/"
                 return null
             }
             return <{{.Name}} />
-{{- else}}
+        {{- else}}
         case "{{.Route}}": return <{{.Name}} />
-{{- end}}
-{{- end}}
+        {{- end}}
+        {{- end}}
         default: return <{{(index .Pages 0).Name}} />
     }
 }
 
-render(<Router />, document.getElementById("app"))
+const appEl = document.getElementById("app")
+if (appEl) {
+    appEl.innerHTML = ""
+    render(<Router />, appEl)
+}

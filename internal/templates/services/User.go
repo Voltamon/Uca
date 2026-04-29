@@ -16,14 +16,14 @@ type UserResponse struct {
 func UserGET(e *core.RequestEvent) error {
     records, err := e.App.FindAllRecords("User")
     if err != nil || len(records) == 0 {
-        return e.JSON(http.StatusNotFound, map[string]string{"error": "no user found"})
+        return e.JSON(http.StatusOK, map[string]string{})
     }
 
     record := records[0]
     return e.JSON(http.StatusOK, UserResponse{
-    	Id:   record.Id,
-    	Name: record.GetString("name"),
-    	Role: record.GetString("role"),
+        Id:   record.Id,
+        Name: record.GetString("name"),
+        Role: record.GetString("role"),
     })
 }
 
