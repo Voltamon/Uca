@@ -153,7 +153,7 @@ func startAgent(aiPort string) (*exec.Cmd, error) {
 			fmt.Println("Agent ready on http://127.0.0.1:" + aiPort)
 			return cmd, nil
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(time.Second)
 	}
 
 	cmd.Process.Kill()
