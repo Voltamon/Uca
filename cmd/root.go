@@ -12,7 +12,10 @@ var rootCmd = &cobra.Command{
     Use:   "uca",
     Short: "Uca - A polyglot microframework",
     Long:  "Uca is a hermetic, polyglot microframework for building full-stack apps with AI agents.",
-}
+    CompletionOptions: cobra.CompletionOptions{
+        DisableDefaultCmd: true,
+    },
+} 
 
 func runTidy() {
 	_, err := tidy.Run()
