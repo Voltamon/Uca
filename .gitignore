@@ -1,0 +1,41 @@
+.uca
+*.exe
+.pocketbase
+
+# Compiled executables
+*.exe
+*.out
+*.o
+*.dll
+*.so
+*.dylib
+
+# Package files
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.rar
+
+# Application data and cache
+*.log
+*.db
+*.sqlite
+*.sqlite3
+*.mp4
+
+# PocketBase specific files
+.pocketbase
+*.pocketbase
+.pb_migrations
+.pb_data
+.pb_sessions
+.pb_backups
+
+# Docker containers
+docker-compose.yml
+docker-compose.override.yml
+
+# Environment variables
+.env
+.env.*
