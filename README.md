@@ -1,153 +1,127 @@
-# Uca - A Hermetic, Polyglot Microframework
+# 📐 Uca
 
-Uca is a modern web framework designed for building full-stack applications with AI agents. It abstracts away the complexity of managing multiple languages and environments, allowing you to focus on behavior and business logic while the framework handles the infrastructure "magic."
+**The Hermetic, Polyglot Microframework for AI-Native Applications.**
 
----
-
-## 🚀 Core Philosophy
-
-*   **Manifest-Driven:** Your `uca.yaml` is the single source of truth for your entire application architecture.
-*   **Hermetic Runtimes:** Uca manages its own Node.js and Python runtimes within the project directory, ensuring zero-dependency, reproducible builds.
-*   **Polyglot by Design:** Write your UI in **TypeScript (Preact)**, your business logic in **Go**, and your AI agents in **Python**.
-*   **Zero Boilerplate:** Hidden CRUD layers and reactive Signals mean you only write the code that is unique to your application.
+Uca (Unified Component Architecture) is a specialized framework designed to eliminate the friction of building full-stack applications that require high-performance backends (**Go**), reactive frontends (**TypeScript/Preact**), and sophisticated AI logic (**Python**).
 
 ---
 
-## 📁 Project Structure
+## 🌟 Why Uca?
 
-```text
-my-app/
-├── uca.yaml          # The application manifest (Source of Truth)
-├── .env              # Environment secrets (managed interactively)
-├── agents/           # Python AI Agent definitions
-├── pages/            # Preact frontend components
-├── services/         # Go backend business logic
-├── assets/           # Static files (images, audio, etc.) shared across all layers
-└── .uca/             # The "Magic" glue layer (Build sandbox, runtimes, DB)
+Traditional full-stack development requires managing multiple toolchains, environment variables, and type definitions across languages. Uca automates this by providing a **hermetic build sandbox** that manages its own runtimes and synchronizes your architecture via a single manifest.
+
+- **Zero-Config Runtimes:** Uca downloads and manages Node.js and Python internally. No more `nvm` or `pyenv` conflicts.
+- **Manifest-as-Code:** Your `uca.yaml` defines your database, API, and AI tools in one place.
+- **Type-Safe Polyglotism:** Types defined in Go are automatically available in TypeScript. Python agents automatically understand your Go services.
+- **AI-First:** Agents aren't an afterthought; they are first-class citizens with automatic tool-spec generation.
+
+---
+
+## 🚀 Quick Start (60 Seconds)
+
+### 1. Install & Initialize
+```bash
+# Assuming you have the 'uca' binary in your path
+uca init my-project
+cd my-project
 ```
 
----
-
-## 🛠️ The Manifest (`uca.yaml`)
-
-The manifest defines your application's DNA.
-
+### 2. Define your Schema
+Edit `uca.yaml` to define a service:
 ```yaml
-app:
-  name: my-app
-  version: "1.0"
-  keys: [GITHUB_PAT_TOKEN] # Required secrets
-  port:
-    frontend: 5173
-    backend: 8090
-    ai: 8091
-
 services:
-  - name: Todo
-    methods: [GET, POST, PUT, DELETE]
+  - name: Task
+    methods: [GET, POST]
     schema:
       title: string | required
-      completed: bool
-
-agents:
-  - name: Assistant
-    model: github/gpt-4o
-    tools: [Todo.All] # Automatically registers all CRUD tools
+      done: bool
 ```
+
+### 3. Tidy & Run
+```bash
+uca tidy  # Generates types, DB migrations, and tests
+uca dev   # Starts Go, Python, and Vite servers
+```
+Your app is now live at `http://localhost:5173`.
 
 ---
 
-## 💻 Backend Logic (Go)
+## 🏗 Framework Anatomy
 
-Uca uses **PocketBase** as its core engine.
+Uca splits your project into a **User Space** (which you own) and an **Engine Room** (managed by Uca).
 
-### Hidden CRUD
-If you define a service in `uca.yaml` but don't write any Go code, Uca automatically provides a high-quality API for that service.
-
-### The Decorator Pattern
-To add custom logic (e.g., validation, notifications), simply implement the function in `services/*.go` and use the provided helpers.
-
-```go
-func UserPOST(e *context.RequestEvent) error {
-    // 1. Custom logic before
-    log.Println("New user signing up!")
-
-    // 2. Call the magic helper
-    err := uca.DefaultPOST(e, "User")
-
-    // 3. Custom logic after
-    return err
-}
+```text
+.
+├── uca.yaml           # The Source of Truth
+├── pages/             # Frontend (TypeScript + Preact)
+├── services/          # Backend (Go + PocketBase)
+├── agents/            # AI (Python + LiteLLM)
+├── assets/            # Global Static Assets
+└── .uca/              # [MANAGED] Build sandbox, Runtimes, and DB
 ```
+
+### The "Tidy" Lifecycle
+Whenever you run `uca tidy`, the framework performs a full reconciliation:
+1.  **Sync Manifest:** Updates the internal registry of services and agents.
+2.  **Schema Migration:** Automatically updates the SQLite/PocketBase schema to match your `uca.yaml`.
+3.  **Type Projection:** Exports Go structs as TypeScript interfaces to `.uca/types/`.
+4.  **Auto-Testing:** Generates "Smoke Tests" for every page, service, and agent in `.uca/tests/autogen/`.
 
 ---
 
-## 🤖 AI Agents (Python)
+## 🧪 Testing Philosophy
 
-Uca provides a simplified, object-oriented API for Python agents using **LiteLLM**.
+Uca believes testing should be **Invisible by Default, Extensible by Choice.**
 
-### The Agent Class
-*   **Auto-Sync:** Changing `agent.model` in Python automatically updates your `uca.yaml`.
-*   **Introspective Tools:** Pass any Python function to `agent.tools`, and Uca automatically generates the JSON tool-spec for the AI.
+### 1. Auto-Generated Baseline
+Every time you run `uca test`, the framework generates and executes:
+- **Mount Tests:** Ensures every Preact component in `pages/` renders without crashing.
+- **Wiring Tests:** Verifies all API endpoints are correctly registered in the Go backend.
+- **Import Tests:** Confirms Python agents load their models and tools correctly.
 
-```python
-from uca.ai import Agent, Message
-from uca.srv import Todo
-
-def get_weather(city: str):
-    """Returns the weather."""
-    return "Sunny"
-
-agent = Agent(model="gpt-4o", tools=[Todo.All, get_weather])
-agent.prompt = f"System: Be helpful.\nUser: {Message}"
-```
+### 2. Custom Extensions
+Simply add `*_test.go`, `*.test.tsx`, or `*_test.py` in your user-space directories. Uca's test runner will merge them into the execution flow.
 
 ---
 
-## ⚛️ Frontend (Preact + Signals)
+## 🔗 Polyglot Communication
 
-Uca implements a "Zero-Boilerplate" frontend using **Preact Signals**.
+Uca provides "Magic Imports" that bridge the language gap:
 
-### Modular Imports
-Import your services and agents directly by name—no more manual `fetch` calls.
-
+### Frontend → Backend (TS to Go)
 ```tsx
-import { Todo } from "uca/srv"
-import { TaskBot } from "uca/ai"
+import { Task } from "uca/srv" // Auto-generated based on uca.yaml
 
-export default function Home() {
-    // 1. Reactive Data: Automatically fetches and updates UI
-    useEffect(() => { Todo.GET.fetch() }, [])
+// Reactive signal: automatically updates the UI on fetch
+useEffect(() => { Task.GET.fetch() }, [])
+```
 
-    // 2. No State Boilerplate: Just render the signal values
-    return (
-        <div>
-            {Todo.GET.data.value.map(t => <p>{t.title}</p>)}
-            <button onClick={() => TaskBot.chat("Hello!", console.log)}>
-                Chat
-            </button>
-        </div>
-    )
-}
+### Agent → Backend (Python to Go)
+```python
+from uca.srv import Task # Agents can call Go logic directly
+
+def check_tasks():
+    pending = Task.GET()
+    return f"You have {len(pending)} tasks left."
 ```
 
 ---
 
-## ⌨️ CLI Commands
+## ⌨️ CLI Command Reference
 
-*   **`uca init <name>`**: Scaffold a new project.
-*   **`uca tidy`**: Synchronize the manifest with the code (generates boilerplate, types, and DB schema).
-*   **`uca dev`**: Start the development environment with hot-reloading for Go, Python, and TypeScript.
-*   **`uca agent add <name> <model>`**: Interactively add a new agent to your manifest.
-
----
-
-## 🔒 Secret Management
-
-Uca manages your `.env` file interactively. If a key defined in `uca.yaml` is missing during `uca dev`, the framework will pause and prompt you to enter the value in the terminal, saving it securely for future runs.
+| Command | Action |
+| :--- | :--- |
+| `init <name>` | Create a new project from a template. |
+| `tidy` | Reconcile manifest, generate types, and update DB. |
+| `dev` | Start the unified development server with hot-reload. |
+| `test` | Run the integrated auto-generated and custom test suite. |
+| `env` | Interactively manage environment variables and API keys. |
+| `export` | Package the application for production deployment. |
 
 ---
 
-## 📦 Assets
+## 🛠 System Requirements
 
-Any file in the `assets/` directory is served globally under the `/assets/` URL prefix. It is accessible to your frontend components (`<img src="/assets/logo.png" />`), your Go services, and your Python agents.
+- **Go 1.22+** (for building the core engine)
+- **Git** (for version control and dependency management)
+- *Note: Node.js and Python are managed automatically by Uca.*
