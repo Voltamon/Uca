@@ -1,58 +1,13 @@
 package services
 
 import (
-    "net/http"
-
-    "{{APP_NAME}}/uca/context"
+	"{{APP_NAME}}/uca"
+	"{{APP_NAME}}/uca/context"
 )
 
-type UserResponse struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	Role string `json:"role"`
-}
+// UserGET and UserPOST are handled automatically by Uca's hidden CRUD.
+// To add custom logic, simply implement the functions here.
 
-func UserGET(e *context.RequestEvent) error {
-    records, err := e.App.FindAllRecords("User")
-    if err != nil || len(records) == 0 {
-        return e.JSON(http.StatusOK, map[string]string{})
-    }
-
-    record := records[0]
-    return e.JSON(http.StatusOK, UserResponse{
-        Id:   record.Id,
-        Name: record.GetString("name"),
-        Role: record.GetString("role"),
-    })
-}
-
-func UserPOST(e *context.RequestEvent) error {
-	var body struct {
-		Name string `json:"name"`
-	}
-
-	err := e.BindBody(&body)
-	if err != nil || body.Name == "" {
-		return e.JSON(http.StatusBadRequest, map[string]string{"error": "name is required"})
-	}
-
-	collection, err := e.App.FindCollectionByNameOrId("User")
-	if err != nil {
-		return e.JSON(http.StatusInternalServerError, map[string]string{"error": "collection not found"})
-	}
-
-	record := context.NewRecord(collection)
-	record.Set("name", body.Name)
-	record.Set("role", "{{DEFAULT_ROLE}}")
-
-	err = e.App.Save(record)
-	if err != nil {
-		return e.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to save user"})
-	}
-
-	return e.JSON(http.StatusCreated, UserResponse{
-		Id:   record.Id,
-		Name: record.GetString("name"),
-		Role: record.GetString("role"),
-	})
-}
+// Keep these imports for your custom logic:
+var _ = uca.DefaultGET
+var _ *context.RequestEvent

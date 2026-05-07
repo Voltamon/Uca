@@ -1,18 +1,25 @@
 package runtime
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/Voltamon/Uca/internal/config"
+)
 
-func EnsureAll() error {
+func EnsureAll(cfg *config.Config) error {
 	fmt.Println("Checking runtimes...")
 
-	err := EnsureNode()
-	if err != nil {
-		return fmt.Errorf("node runtime error: %w", err)
+	if len(cfg.Pages) > 0 {
+		err := EnsureNode()
+		if err != nil {
+			return fmt.Errorf("node runtime error: %w", err)
+		}
 	}
 
-	err = EnsurePython()
-	if err != nil {
-		return fmt.Errorf("python runtime error: %w", err)
+	if len(cfg.Agents) > 0 {
+		err := EnsurePython()
+		if err != nil {
+			return fmt.Errorf("python runtime error: %w", err)
+		}
 	}
 
 	return nil

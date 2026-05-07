@@ -3,11 +3,11 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/Voltamon/Uca/internal/manifest"
 	"github.com/Voltamon/Uca/internal/prompt"
+	"github.com/Voltamon/Uca/internal/deps"
 )
 
 var serviceCmd = &cobra.Command{
@@ -16,12 +16,11 @@ var serviceCmd = &cobra.Command{
 }
 
 var serviceAddCmd = &cobra.Command{
-	Use:   "add [name] [methods...]",
+	Use:   "add [name]",
 	Short: "Add a new service",
-	Args:  cobra.ArbitraryArgs,
+	Args:  cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var name string
-		var methods []string
 		var err error
 
 		if len(args) >= 1 {
@@ -34,27 +33,12 @@ var serviceAddCmd = &cobra.Command{
 			}
 		}
 
-		if len(args) >= 2 {
-			for _, m := range args[1:] {
-				methods = append(methods, strings.ToUpper(m))
-			}
-		} else {
-			methodStr, err := prompt.AskDefault("Methods (comma separated)", "GET,POST")
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			for _, m := range strings.Split(methodStr, ",") {
-				methods = append(methods, strings.ToUpper(strings.TrimSpace(m)))
-			}
-		}
-
-		err = manifest.AddService(name, methods)
+		err = manifest.AddService(name, []string{"GET", "POST", "PUT", "DELETE"})
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Printf("Added service %q with methods %v\n", name, methods)
+		fmt.Printf("Added service %q\n", name)
 		runTidy()
 	},
 }
@@ -81,7 +65,7 @@ var serviceRemoveCmd = &cobra.Command{
 			}
 			fmt.Println("Available services:")
 			for _, s := range services {
-				fmt.Printf("  %s %v\n", s.Name, s.Methods)
+				fmt.Printf("  %s\n", s.Name)
 			}
 			name, err = prompt.AskRequired("Service name to remove")
 			if err != nil {
@@ -98,6 +82,7 @@ var serviceRemoveCmd = &cobra.Command{
 		fmt.Printf("Removed service %q\n", name)
 	},
 }
+
 var serviceListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all services",
@@ -117,7 +102,30 @@ var serviceListCmd = &cobra.Command{
 	},
 }
 
+var serviceDepsCmd = &cobra.Command{
+	Use:   "deps",
+	Short: "Manage service dependencies",
+}
+
+var serviceDepsAddCmd = &cobra.Command{
+	Use:   "add [package]",
+	Short: "Add a new go module for services",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		pkg := args[0]
+		if err := deps.AddServicesDep(pkg); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		d, _ := deps.Load()
+		d.Services[pkg] = "latest"
+		deps.Save(d)
+	},
+}
+
 func init() {
+	serviceDepsCmd.AddCommand(serviceDepsAddCmd)
+	serviceCmd.AddCommand(serviceDepsCmd)
 	serviceCmd.AddCommand(serviceAddCmd)
 	serviceCmd.AddCommand(serviceRemoveCmd)
 	serviceCmd.AddCommand(serviceListCmd)

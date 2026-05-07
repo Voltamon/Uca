@@ -9,17 +9,27 @@ export default defineConfig({
   plugins: [preact()],
   test: {
     environment: "jsdom",
-    include: ["pages/*.test.tsx"],
+    setupFiles: ["./vitest.setup.ts"],
+    environmentOptions: {
+      jsdom: {
+        url: "http://localhost/"
+      }
+    },
+    include: ["pages/*.test.tsx", "tests/autogen/pages/*.test.tsx"],
   },
   resolve: {
+    dedupe: ["preact", "preact/hooks", "@preact/signals"],
     alias: {
       "uca/types": resolve(__dirname, "types/index.ts"),
       "uca/roles": resolve(__dirname, "roles/index.ts"),
       "uca/ui": resolve(__dirname, "ui/index.ts"),
-      "preact/jsx-runtime": resolve(__dirname, "node_modules/preact/jsx-runtime"),
-      "preact/jsx-dev-runtime": resolve(__dirname, "node_modules/preact/jsx-runtime"),
-      "preact/hooks": resolve(__dirname, "node_modules/preact/hooks"),
-      "preact": resolve(__dirname, "node_modules/preact")
+      "uca/srv": resolve(__dirname, "ui/srv/index.ts"),
+      "uca/ai": resolve(__dirname, "ui/ai/index.ts"),
+      "@preact/signals": resolve(__dirname, "node_modules/@preact/signals"),
+      "preact/jsx-runtime": resolve(__dirname, "node_modules/preact/jsx-runtime/dist/jsxRuntime.mjs"),
+      "preact/jsx-dev-runtime": resolve(__dirname, "node_modules/preact/jsx-runtime/dist/jsxRuntime.mjs"),
+      "preact/hooks": resolve(__dirname, "node_modules/preact/hooks/dist/hooks.mjs"),
+      "preact": resolve(__dirname, "node_modules/preact/dist/preact.mjs")
     }
   }
 })

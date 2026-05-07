@@ -16,10 +16,13 @@ import (
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"{{APP_NAME}}/uca"
+	"{{APP_NAME}}/registry"
 )
 
 func main() {
-	app := pocketbase.New()
+	app := pocketbase.NewWithConfig(pocketbase.Config{
+		DefaultDataDir: ".uca/pb_data",
+	})
 
 	app.OnBootstrap().BindFunc(func(e *core.BootstrapEvent) error {
 		err := e.Next()
@@ -31,7 +34,7 @@ func main() {
 	})
 
 	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
-    	for serviceName, methods := range uca.Registry {
+    	for serviceName, methods := range registry.Registry {
         	for method, handler := range methods {
             	path := "/api/" + serviceName
              	switch method {
@@ -47,12 +50,12 @@ func main() {
         	}
     	}
 
-    	for agentName, agentPort := range uca.Agents {
+    	for agentName, agentPort := range registry.Agents {
         	name := agentName
         	port := agentPort
         	se.Router.GET("/api/chat/"+name, func(e *core.RequestEvent) error {
             	message := e.Request.URL.Query().Get("message")
-            	agentURL := "http://127.0.0.1:" + port + "/chat?message=" + url.QueryEscape(message)
+            	agentURL := "http://127.0.0.1:" + port + "/chat?agent=" + name + "&message=" + url.QueryEscape(message)
 
             	resp, err := http.Get(agentURL)
             	if err != nil {
@@ -88,13 +91,26 @@ func main() {
          	})
      	}
 
-      	if _, err := os.Stat("dist"); err == nil {
+		// Serve static assets from the root assets/ folder
+		se.Router.GET("/assets/{path...}", func(e *core.RequestEvent) error {
+			path := e.Request.PathValue("path")
+			filePath := filepath.Join("assets", path)
+			
+			if _, err := os.Stat(filePath); os.IsNotExist(err) {
+				return e.JSON(http.StatusNotFound, map[string]string{"error": "Asset not found"})
+			}
+
+			http.ServeFile(e.Response, e.Request, filePath)
+			return nil
+		})
+
+      	if _, err := os.Stat(".uca/dist"); err == nil {
         	se.Router.GET("/{path...}", func(e *core.RequestEvent) error {
             	path := e.Request.PathValue("path")
-            	filePath := filepath.Join("dist", path)
+            	filePath := filepath.Join(".uca/dist", path)
 
             	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-                	filePath = filepath.Join("dist", "index.html")
+                	filePath = filepath.Join(".uca/dist", "index.html")
             	}
 
             	http.ServeFile(e.Response, e.Request, filePath)
@@ -111,7 +127,7 @@ func main() {
 	}
 
 	if err := apis.Serve(app, apis.ServeConfig{
-		HttpAddr:        "127.0.0.1:8090",
+		HttpAddr:        "127.0.0.1:{{BACKEND_PORT}}",
 		ShowStartBanner: false,
 	}); err != nil {
 		log.Fatal(err)

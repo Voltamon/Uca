@@ -1,0 +1,15 @@
+app:
+    name: weather-app
+    version: "1.0"
+    keys:
+        - GITHUB_PAT_TOKEN
+    port:
+        frontend: 5176
+        backend: 8094
+        ai: 8095
+pages:
+    - name: Weather
+      route: /
+agents:
+    - name: Forecaster
+      model: github/gpt-4o-mini

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/Voltamon/Uca/internal/tidy"
 )
 
 func watchServices(done chan error) {
@@ -25,7 +26,18 @@ func watchServices(done chan error) {
 		return
 	}
 
-	fmt.Println("Watching services/ for changes...")
+	err = watcher.Add("agents")
+	if err != nil {
+		done <- fmt.Errorf("failed to watch agents: %w", err)
+		return
+	}
+
+	err = watcher.Add("uca.yaml")
+	if err != nil {
+		fmt.Printf("Warning: failed to watch uca.yaml: %v\n", err)
+	}
+
+	fmt.Println("Watching services/, agents/ and uca.yaml for changes...")
 
 	var debounce *time.Timer
 	var lastFile string
@@ -37,7 +49,7 @@ func watchServices(done chan error) {
 				return
 			}
 
-			if !strings.HasSuffix(event.Name, ".go") {
+			if !strings.HasSuffix(event.Name, ".go") && !strings.HasSuffix(event.Name, ".py") && !strings.HasSuffix(event.Name, "uca.yaml") {
 				continue
 			}
 
@@ -54,10 +66,24 @@ func watchServices(done chan error) {
 			}
 
 			lastFile = event.Name
+			fileName := event.Name
 			debounce = time.AfterFunc(time.Second, func() {
 				lastFile = ""
-				fmt.Printf("\nChange detected in %s — rebuilding...\n", filepath.Base(event.Name))
-				rebuildAndRestart()
+				fmt.Printf("\nChange detected in %s — refreshing...\n", filepath.Base(fileName))
+				
+				if strings.HasSuffix(fileName, "uca.yaml") {
+					_, err := tidy.Run()
+					if err != nil {
+						fmt.Printf("[UCA] Tidy failed: %v\n", err)
+						return
+					}
+					rebuildAndRestart()
+					restartAgent()
+				} else if strings.HasSuffix(fileName, ".go") {
+					rebuildAndRestart()
+				} else {
+					restartAgent()
+				}
 			})
 
 		case err, ok := <-watcher.Errors:
@@ -68,8 +94,6 @@ func watchServices(done chan error) {
 		}
 	}
 }
-
-var serverProcess *exec.Cmd
 
 func rebuildAndRestart() {
 	if serverProcess != nil && serverProcess.Process != nil {

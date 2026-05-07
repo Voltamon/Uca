@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/Voltamon/Uca/internal/manifest"
 )
 
 type LogEntry struct {
@@ -60,6 +61,24 @@ func (l *TaggedLogger) Write(p []byte) (n int, err error) {
 	lines := strings.Split(string(p), "\n")
 	for _, line := range lines {
 		if line == "" {
+			continue
+		}
+
+		if strings.HasPrefix(line, "UCA_SYNC:") {
+			parts := strings.Split(line, ":")
+			if len(parts) >= 5 && parts[1] == "AGENT" {
+				agentName := parts[2]
+				updateType := parts[3]
+				value := parts[4]
+
+				if updateType == "MODEL" {
+					fmt.Printf("\n[UCA] Detected model change for agent %q to %q. Updating uca.yaml...\n", agentName, value)
+					err := manifest.UpdateAgent(agentName, value)
+					if err != nil {
+						fmt.Printf("[UCA] Failed to update uca.yaml: %v\n", err)
+					}
+				}
+			}
 			continue
 		}
 

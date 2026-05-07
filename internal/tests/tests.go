@@ -5,13 +5,20 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/Voltamon/Uca/internal/runtime"
 	"github.com/Voltamon/Uca/internal/scaffold"
+	"github.com/Voltamon/Uca/internal/tidy"
 )
 
 func Run(goOnly bool, tsOnly bool, pyOnly bool) error {
-	err := ensureTestDeps()
+	_, err := tidy.Run()
+	if err != nil {
+		return fmt.Errorf("failed to tidy project before testing: %w", err)
+	}
+
+	err = EnsureTestDeps(goOnly, tsOnly, pyOnly)
 	if err != nil {
 		return fmt.Errorf("failed to ensure test deps: %w", err)
 	}
@@ -50,7 +57,7 @@ type TestResult struct {
 
 func runGoTests() *TestResult {
 	fmt.Println("\nRunning Go tests...")
-	cmd := exec.Command("go", "test", "./services/...", "-v")
+	cmd := exec.Command("go", "test", "./services/...", "./tests/autogen/services/...", "-v")
 	cmd.Dir = ".uca"
 	output, err := cmd.CombinedOutput()
 
@@ -89,7 +96,19 @@ func runTSTests() *TestResult {
 
 func runPyTests() *TestResult {
 	fmt.Println("\nRunning Python tests...")
-	cmd := exec.Command(".uca/venv/bin/pytest", "agents/", "-v")
+	cmd := exec.Command("./venv/bin/pytest", "agents/", "tests/autogen/agents/", "-v")
+	cmd.Dir = ".uca"
+	
+	// Filter out PYTHONPATH to avoid interference from system packages (e.g. ROS)
+	env := os.Environ()
+	newEnv := []string{}
+	for _, e := range env {
+		if !strings.HasPrefix(e, "PYTHONPATH=") {
+			newEnv = append(newEnv, e)
+		}
+	}
+	cmd.Env = newEnv
+
 	output, err := cmd.CombinedOutput()
 
 	result := &TestResult{

@@ -1,0 +1,24 @@
+package services_test
+
+import (
+	"testing"
+	"{{.AppName}}/registry"
+)
+
+func TestAutogenService_{{.Name}}(t *testing.T) {
+	if registry.Registry == nil {
+		t.Fatal("Registry is not initialized")
+	}
+
+	methods, ok := registry.Registry["{{.Name}}"]
+	if !ok {
+		t.Errorf("Service {{.Name}} not found in registry")
+		return
+	}
+	
+	{{range .Methods}}
+	if _, ok := methods["{{.}}"]; !ok {
+		t.Errorf("Method {{.}} for service {{$.Name}} not found in registry")
+	}
+	{{end}}
+}

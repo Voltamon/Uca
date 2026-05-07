@@ -1,12 +1,11 @@
+import importlib.util
+import json
+import os
+import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
-import sys
-import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-import litellm
-import json
 
 def load_env():
     env_path = ".env"
@@ -15,15 +14,43 @@ def load_env():
             for line in f:
                 line = line.strip()
                 if line and not line.startswith("#"):
-                    k, v = line.split("=", 1)
-                    os.environ[k] = v
+                    if "=" in line:
+                        k, v = line.split("=", 1)
+                        os.environ[k] = v
 
 load_env()
 
-MODEL = "{{MODEL}}"
 API_KEY = os.environ.get("GITHUB_PAT_TOKEN", "")
 API_BASE = "https://models.inference.ai.azure.com"
-TIMEOUT = int(os.environ.get("AI_TIMEOUT", "30"))
+
+# Cache for loaded agents
+agents_cache = {}
+
+def get_agent(name):
+    # For dev, we might want to reload it if file changed, but for now cache is fine
+    # Actually, the supervisor will restart the server if files change.
+    if name in agents_cache:
+        return agents_cache[name]
+    
+    # Try relative to root
+    path = f"agents/{name}.py"
+    if not os.path.exists(path):
+        # Try relative to .uca/venv/
+        path = os.path.join(os.path.dirname(__file__), "../../agents", f"{name}.py")
+        if not os.path.exists(path):
+            return None
+    
+    try:
+        spec = importlib.util.spec_from_file_location(name, path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        agent = getattr(module, "agent", None)
+        if agent:
+            agents_cache[name] = agent
+        return agent
+    except Exception as e:
+        print(f"Error loading agent {name}: {e}")
+        return None
 
 class AgentHandler(BaseHTTPRequestHandler):
 
@@ -42,18 +69,24 @@ class AgentHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/chat":
             params = parse_qs(parsed.query)
+            agent_name = params.get("agent", [""])[0]
             message = params.get("message", [""])[0]
 
-            try:
-                response = litellm.completion(
-                    model=MODEL,
-                    messages=[{"role": "user", "content": message}],
-                    api_key=API_KEY,
-                    api_base=API_BASE,
-                    timeout=TIMEOUT
-                )
+            if not agent_name:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b"Missing agent parameter")
+                return
 
-                content = response.choices[0].message.content
+            agent = get_agent(agent_name)
+            if not agent:
+                self.send_response(404)
+                self.end_headers()
+                self.wfile.write(f"Agent {agent_name} not found".encode())
+                return
+
+            try:
+                content = agent.run(message)
 
                 self.send_response(200)
                 self.send_header("Content-Type", "text/event-stream")
@@ -75,10 +108,6 @@ class AgentHandler(BaseHTTPRequestHandler):
 
             return
 
-        self.send_response(404)
-        self.end_headers()
-
-    def do_POST(self):
         self.send_response(404)
         self.end_headers()
 

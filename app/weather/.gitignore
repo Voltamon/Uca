@@ -1,0 +1,14 @@
+# Uca framework hidden sandbox
+.uca/
+
+# Environment variables (secrets)
+.env
+
+# Generated manifest templates
+.env.uca
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

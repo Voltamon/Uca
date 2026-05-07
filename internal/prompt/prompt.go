@@ -40,3 +40,24 @@ func AskDefault(question string, defaultVal string) (string, error) {
 	}
 	return answer, nil
 }
+
+func AskChoice(question string, choices []string) (string, error) {
+	fmt.Println(question)
+	for i, c := range choices {
+		fmt.Printf("  %d) %s\n", i+1, c)
+	}
+
+	for {
+		answer, err := Ask("Enter number")
+		if err != nil {
+			return "", err
+		}
+
+		var idx int
+		_, err = fmt.Sscanf(answer, "%d", &idx)
+		if err == nil && idx > 0 && idx <= len(choices) {
+			return choices[idx-1], nil
+		}
+		fmt.Println("  Invalid choice, try again")
+	}
+}

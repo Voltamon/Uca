@@ -10,6 +10,8 @@ export default defineConfig({
       "uca/types": resolve(__dirname, "types/index.ts"),
       "uca/roles": resolve(__dirname, "roles/index.ts"),
       "uca/ui": resolve(__dirname, "ui/index.ts"),
+      "uca/srv": resolve(__dirname, "ui/srv/index.ts"),
+      "uca/ai": resolve(__dirname, "ui/ai/index.ts"),
       "preact/jsx-runtime": resolve(__dirname, "node_modules/preact/jsx-runtime"),
       "preact/jsx-dev-runtime": resolve(__dirname, "node_modules/preact/jsx-runtime"),
       "preact/hooks": resolve(__dirname, "node_modules/preact/hooks"),
@@ -18,6 +20,9 @@ export default defineConfig({
   },
   server: {
     port: {{FRONTEND_PORT}},
+    fs: {
+      allow: [".."]
+    },
     proxy: {
       "/api": "http://localhost:{{BACKEND_PORT}}"
     }
@@ -33,7 +38,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ["preact", "preact/hooks", "preact/jsx-runtime"]
+    include: ["preact", "preact/hooks", "preact/jsx-runtime", "@preact/signals"]
   }
 })
 

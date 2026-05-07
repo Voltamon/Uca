@@ -25,9 +25,9 @@ func normalizeType(t string) string {
 }
 
 func RunMigrations(app core.App) {
-	data, err := os.ReadFile("schema.json")
+	data, err := os.ReadFile(".uca/schema.json")
 	if err != nil {
-		log.Println("No schema.json found, skipping migrations")
+		log.Println("No .uca/schema.json found, skipping migrations")
 		return
 	}
 
@@ -51,6 +51,15 @@ func RunMigrations(app core.App) {
 
 func createCollection(app core.App, c Collection) {
 	collection := core.NewBaseCollection(c.Name)
+	
+	// Set public rules by default
+	rule := ""
+	collection.ListRule = &rule
+	collection.ViewRule = &rule
+	collection.CreateRule = &rule
+	collection.UpdateRule = &rule
+	collection.DeleteRule = &rule
+
 	for _, f := range c.Fields {
 		addField(collection, f)
 	}

@@ -12,6 +12,7 @@ type TemplateVars struct {
 	AppName     string
 	Name        string
 	Model       string
+	Tools       string
 	AIPort      string
 	BackendPort string
 	FrontendPort string
@@ -28,6 +29,7 @@ func CopyTemplate(src string, dest string, vars TemplateVars) error {
 	content = strings.ReplaceAll(content, "{{APP_NAME}}", vars.AppName)
 	content = strings.ReplaceAll(content, "{{NAME}}", vars.Name)
 	content = strings.ReplaceAll(content, "{{MODEL}}", vars.Model)
+	content = strings.ReplaceAll(content, "{{TOOLS}}", vars.Tools)
 	content = strings.ReplaceAll(content, "{{AI_PORT}}", vars.AIPort)
 	content = strings.ReplaceAll(content, "{{BACKEND_PORT}}", vars.BackendPort)
 	content = strings.ReplaceAll(content, "{{FRONTEND_PORT}}", vars.FrontendPort)
@@ -45,6 +47,7 @@ func GenerateFiles(appName string, model string, aiPort string, defaultRole stri
 	vars := TemplateVars{
 		AppName:     appName,
 		Model:       model,
+		Tools:       `["History.GetChatHistory", "User.GET", "DuckDuckGo"]`,
 		AIPort:      aiPort,
 		DefaultRole: defaultRole,
 	}

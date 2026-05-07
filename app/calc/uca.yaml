@@ -1,0 +1,10 @@
+app:
+    name: calc-app
+    version: "1.0"
+    port:
+        frontend: 5175
+        backend: 8090
+        ai: 8091
+pages:
+    - name: Calc
+      route: /

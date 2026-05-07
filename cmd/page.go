@@ -7,7 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/Voltamon/Uca/internal/manifest"
-"github.com/Voltamon/Uca/internal/prompt"
+	"github.com/Voltamon/Uca/internal/prompt"
+	"github.com/Voltamon/Uca/internal/deps"
 )
 
 var pageCmd = &cobra.Command{
@@ -112,7 +113,30 @@ var pageListCmd = &cobra.Command{
 	},
 }
 
+var pageDepsCmd = &cobra.Command{
+	Use:   "deps",
+	Short: "Manage page dependencies",
+}
+
+var pageDepsAddCmd = &cobra.Command{
+	Use:   "add [package]",
+	Short: "Add a new npm dependency for pages",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		pkg := args[0]
+		if err := deps.AddPagesDep(pkg); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		d, _ := deps.Load()
+		d.Pages[pkg] = "latest"
+		deps.Save(d)
+	},
+}
+
 func init() {
+	pageDepsCmd.AddCommand(pageDepsAddCmd)
+	pageCmd.AddCommand(pageDepsCmd)
 	pageCmd.AddCommand(pageAddCmd)
 	pageCmd.AddCommand(pageRemoveCmd)
 	pageCmd.AddCommand(pageListCmd)

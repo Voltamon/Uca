@@ -1,0 +1,18 @@
+app:
+    name: blog-app
+    version: "1.0"
+    port:
+        frontend: 5174
+        backend: 8092
+        ai: 8091
+pages:
+    - name: Posts
+      route: /
+services:
+    - name: Post
+      methods:
+        - GET
+        - POST
+      schema:
+        content: string | required
+        title: string | required

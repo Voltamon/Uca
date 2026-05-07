@@ -58,3 +58,25 @@ func ListAgents() ([]config.AgentConfig, error) {
 	}
 	return cfg.Agents, nil
 }
+
+func UpdateAgent(name string, model string) error {
+	cfg, err := readConfig()
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for i, a := range cfg.Agents {
+		if a.Name == name {
+			cfg.Agents[i].Model = model
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("agent %q not found", name)
+	}
+
+	return writeConfig(cfg)
+}

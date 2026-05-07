@@ -10,7 +10,7 @@ import (
 	"github.com/Voltamon/Uca/internal/config"
 )
 
-const envPath = ".uca/.env"
+const envPath = ".env"
 
 func Add(key string, value string) error {
 	entries, err := readAll()

@@ -14,7 +14,7 @@ async function getUser() {
     try {
         const res = await fetch("/api/User")
         const data = await res.json()
-        if (data && data.name) return data
+        if (Array.isArray(data) && data.length > 0) return data[0]
     } catch {}
     return null
 }

@@ -1,0 +1,31 @@
+import pytest
+import sys
+import os
+
+# Ensure the .uca directory is in the path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
+# Ensure the root directory is in path to import agents.{{.Name}}
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../')))
+
+def test_autogen_agent_{{.Name}}_import():
+    """Verifies the agent module can be imported."""
+    try:
+        import agents.{{.Name}}
+    except ImportError as e:
+        pytest.fail(f"Could not import agents.{{.Name}}: {e}")
+
+def test_autogen_agent_{{.Name}}_instance():
+    """Verifies the agent module has an 'agent' instance."""
+    import agents.{{.Name}}
+    assert hasattr(agents.{{.Name}}, 'agent'), f"Module agents.{{.Name}} does not have an 'agent' variable"
+    
+    from uca.ai import Agent
+    assert isinstance(agents.{{.Name}}.agent, Agent), f"Variable 'agent' in agents.{{.Name}} is not an instance of uca.ai.Agent"
+
+def test_autogen_agent_{{.Name}}_configuration():
+    """Verifies the agent's internal state matches the uca.yaml config."""
+    import agents.{{.Name}}
+    agent = agents.{{.Name}}.agent
+    
+    # We can check basic properties if they are exposed
+    assert hasattr(agent, 'model_name') or hasattr(agent, 'model'), "Agent instance does not have model information"

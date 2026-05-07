@@ -5,12 +5,15 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/Voltamon/Uca/internal/config"
 	"github.com/Voltamon/Uca/internal/scaffold"
 )
 
-func generateDevMain(appName string) error {
+func generateDevMain(cfg *config.Config) error {
 	return scaffold.CopyTemplate("uca/main.go", ".uca/main.go", scaffold.TemplateVars{
-		AppName: appName,
+		AppName:     cfg.App.Name,
+		BackendPort: fmt.Sprintf("%d", cfg.App.Port.Backend),
+		AIPort:      fmt.Sprintf("%d", cfg.App.Port.AI),
 	})
 }
 
@@ -43,20 +46,36 @@ func ensureGoMod(appName string) error {
 		return fmt.Errorf("failed to create .uca directory: %w", err)
 	}
 
-	if _, err := os.Stat(".uca/go.mod"); err == nil {
-		return nil
+	if _, err := os.Stat(".uca/go.mod"); os.IsNotExist(err) {
+		cmd := exec.Command("go", "mod", "init", appName)
+		cmd.Dir = ".uca"
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf("failed to initialize go.mod: %w", err)
+		}
+
+		cmd = exec.Command("go", "get", "github.com/pocketbase/pocketbase@v0.22.11")
+		cmd.Dir = ".uca"
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf("failed to get pocketbase: %w", err)
+		}
+
+		fmt.Println("Generated: .uca/go.mod")
 	}
 
-	cmd := exec.Command("go", "mod", "init", appName)
+	cmd := exec.Command("go", "mod", "tidy")
 	cmd.Dir = ".uca"
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("failed to initialize go.mod: %w", err)
+		return fmt.Errorf("failed to run go mod tidy: %w", err)
 	}
-
-	fmt.Println("Generated: .uca/go.mod")
 
 	symlinks := []struct {
 		src  string

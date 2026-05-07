@@ -14,42 +14,49 @@ import (
 )
 
 func generateFrontend(cfg *config.Config) error {
-	err := generateMainTsx(cfg)
-	if err != nil {
-		return err
-	}
-
-	files := []struct {
-		src  string
-		dest string
-	}{
-		{"uca/package.json", ".uca/package.json"},
-		{"uca/vite.config.mts", ".uca/vite.config.mts"},
-		{"uca/index.html", ".uca/index.html"},
-		{"uca/tsconfig.json", ".uca/tsconfig.json"},
-	}
-
-	for _, f := range files {
-		err := scaffold.CopyTemplate(f.src, f.dest, scaffold.TemplateVars{
-			AppName:      cfg.App.Name,
-			BackendPort:  fmt.Sprintf("%d", cfg.App.Port.Backend),
-			FrontendPort: fmt.Sprintf("%d", cfg.App.Port.Frontend),
-			AIPort:       fmt.Sprintf("%d", cfg.App.Port.AI),
-		})
+	if len(cfg.Pages) > 0 {
+		err := generateMainTsx(cfg)
 		if err != nil {
-			return fmt.Errorf("failed to generate %s: %w", f.dest, err)
+			return err
 		}
-		fmt.Println("Generated:", f.dest)
+
+		files := []struct {
+			src  string
+			dest string
+		}{
+			{"uca/package.json", ".uca/package.json"},
+			{"uca/vite.config.mts", ".uca/vite.config.mts"},
+			{"uca/index.html", ".uca/index.html"},
+			{"uca/tsconfig.json", ".uca/tsconfig.json"},
+		}
+
+		for _, f := range files {
+			if _, err := os.Stat(f.dest); err == nil {
+				continue
+			}
+			err := scaffold.CopyTemplate(f.src, f.dest, scaffold.TemplateVars{
+				AppName:      cfg.App.Name,
+				BackendPort:  fmt.Sprintf("%d", cfg.App.Port.Backend),
+				FrontendPort: fmt.Sprintf("%d", cfg.App.Port.Frontend),
+				AIPort:       fmt.Sprintf("%d", cfg.App.Port.AI),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to generate %s: %w", f.dest, err)
+			}
+			fmt.Println("Generated:", f.dest)
+		}
+
+		err = installFrontendDeps()
+		if err != nil {
+			return err
+		}
 	}
 
-	err = installFrontendDeps()
-	if err != nil {
-		return err
-	}
-
-	err = installPythonDeps()
-	if err != nil {
-		return err
+	if len(cfg.Agents) > 0 {
+		err := installPythonDeps()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -98,11 +105,7 @@ func generateMainTsx(cfg *config.Config) error {
 }
 
 func installFrontendDeps() error {
-	if _, err := os.Stat(".uca/node_modules"); err == nil {
-		return nil
-	}
-
-	fmt.Println("Installing frontend dependencies...")
+	fmt.Println("Syncing frontend dependencies...")
 	cmd := exec.Command(runtime.NodeBin(), runtime.NpmBin(), "install", "--silent", "--prefix", ".uca")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -110,20 +113,18 @@ func installFrontendDeps() error {
 }
 
 func installPythonDeps() error {
-	if _, err := os.Stat(".uca/venv"); err == nil {
-		return nil
+	if _, err := os.Stat(".uca/venv"); os.IsNotExist(err) {
+		fmt.Println("Creating Python virtual environment...")
+		cmd := exec.Command(runtime.PythonBin(), "-m", "venv", ".uca/venv")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to create venv: %w", err)
+		}
 	}
 
-	fmt.Println("Creating Python virtual environment...")
-	cmd := exec.Command(runtime.PythonBin(), "-m", "venv", ".uca/venv")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to create venv: %w", err)
-	}
-
-	fmt.Println("Installing Python dependencies...")
-	cmd = exec.Command(".uca/venv/bin/pip", "install", "--quiet", "smolagents[litellm]", "httpx", "litellm")
+	fmt.Println("Syncing Python dependencies...")
+	cmd := exec.Command(".uca/venv/bin/pip", "install", "--quiet", "smolagents[litellm]", "httpx", "litellm")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

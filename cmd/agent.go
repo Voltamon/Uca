@@ -6,7 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/Voltamon/Uca/internal/manifest"
-"github.com/Voltamon/Uca/internal/prompt"
+	"github.com/Voltamon/Uca/internal/prompt"
+	"github.com/Voltamon/Uca/internal/deps"
 )
 
 var agentCmd = &cobra.Command{
@@ -35,7 +36,7 @@ var agentAddCmd = &cobra.Command{
 		if len(args) >= 2 {
 			model = args[1]
 		} else {
-			model, err = prompt.AskDefault("Model", "gpt-4o-mini")
+			model, err = prompt.AskDefault("Model", "github/gpt-4o-mini")
 			if err != nil {
 				fmt.Println(err)
 				os.Exit(1)
@@ -111,7 +112,30 @@ var agentListCmd = &cobra.Command{
 	},
 }
 
+var agentDepsCmd = &cobra.Command{
+	Use:   "deps",
+	Short: "Manage agent dependencies",
+}
+
+var agentDepsAddCmd = &cobra.Command{
+	Use:   "add [package]",
+	Short: "Add a new pip package for agents",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		pkg := args[0]
+		if err := deps.AddAgentsDep(pkg); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		d, _ := deps.Load()
+		d.Agents[pkg] = "latest"
+		deps.Save(d)
+	},
+}
+
 func init() {
+	agentDepsCmd.AddCommand(agentDepsAddCmd)
+	agentCmd.AddCommand(agentDepsCmd)
 	agentCmd.AddCommand(agentAddCmd)
 	agentCmd.AddCommand(agentRemoveCmd)
 	agentCmd.AddCommand(agentListCmd)

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	NodeVersion   = "20.11.0"
+	NodeVersion   = "20.20.2"
 	PythonVersion = "3.12.3"
 )
 

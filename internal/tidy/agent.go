@@ -12,10 +12,8 @@ func generateAgentServer(cfg *config.Config) error {
 		return nil
 	}
 
-	model := cfg.Agents[0].Model
-
 	err := scaffold.CopyTemplate("agents/server.py", ".uca/venv/server.py", scaffold.TemplateVars{
-		Model: model,
+		AppName: cfg.App.Name,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to generate agent server: %w", err)
