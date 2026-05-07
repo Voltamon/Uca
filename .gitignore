@@ -2,6 +2,8 @@
 *.exe
 .pocketbase
 
+app/
+
 # Compiled executables
 *.exe
 *.out
